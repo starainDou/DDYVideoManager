@@ -219,8 +219,8 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
         if (imageDataSampleBuffer) {
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
             dispatch_async(dispatch_get_main_queue(), ^{
-                if (self.takePhotoBlock) {
-                    self.takePhotoBlock([UIImage imageWithData:imageData]);
+                if (self.takeFinishBlock) {
+                    self.takeFinishBlock([UIImage imageWithData:imageData]);
                 }
             });
         }
@@ -246,8 +246,8 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
     [self.assetWriter finishWritingWithCompletionHandler:^{
         if (self.assetWriter.status == AVAssetWriterStatusCompleted) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                if (self.recordBlock) {
-                    self.recordBlock(self.videoURL);
+                if (self.recordFinishBlock) {
+                    self.recordFinishBlock(self.videoURL);
                 }
             });
         }
@@ -255,7 +255,6 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 }
 
 #pragma mark - Private methods
-
 - (AVCaptureDevice *)getCameraDeviceWithPosition:(AVCaptureDevicePosition)position {
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     for (AVCaptureDevice *camera in devices) {
@@ -284,9 +283,9 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 - (void)setAssetWriterVideoInput {
     NSError *error = nil;
     _assetWriter = [[AVAssetWriter alloc] initWithURL:_videoURL fileType:AVFileTypeQuickTimeMovie error:&error];
-    NSDictionary *outputSetting = @{AVVideoCodecKey : AVVideoCodecH264,
-                                    AVVideoWidthKey : @(_videoDimensions.width),
-                                    AVVideoHeightKey: @(_videoDimensions.height) };
+    NSDictionary *outputSetting = @{AVVideoCodecKey:AVVideoCodecH264,
+                                    AVVideoWidthKey:@(_videoDimensions.width),
+                                    AVVideoHeightKey:@(_videoDimensions.height) };
     _assetVideoInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:outputSetting];
     // 要从captureSession实时获取数据
     _assetVideoInput.expectsMediaDataInRealTime = YES;
@@ -311,11 +310,11 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
     const AudioChannelLayout *audioChannelLayout = CMAudioFormatDescriptionGetChannelLayout(_audioFormatDescription, &aclSize);
     NSData *audioChannelLayoutData = (audioChannelLayout && aclSize>0) ? [NSData dataWithBytes:audioChannelLayout length:aclSize] : [NSData data];
     
-    NSDictionary *outputSetting = @{AVFormatIDKey : [NSNumber numberWithInteger:kAudioFormatMPEG4AAC],
-                                    AVSampleRateKey : [NSNumber numberWithFloat:audioASBD->mSampleRate],
-                                    AVEncoderBitRatePerChannelKey : [NSNumber numberWithInt:64000],
-                                    AVNumberOfChannelsKey : [NSNumber numberWithInteger:audioASBD->mChannelsPerFrame],
-                                    AVChannelLayoutKey : audioChannelLayoutData};
+    NSDictionary *outputSetting = @{AVFormatIDKey:[NSNumber numberWithInteger:kAudioFormatMPEG4AAC],
+                                    AVSampleRateKey:[NSNumber numberWithFloat:audioASBD->mSampleRate],
+                                    AVEncoderBitRatePerChannelKey:[NSNumber numberWithInt:64000],
+                                    AVNumberOfChannelsKey:[NSNumber numberWithInteger:audioASBD->mChannelsPerFrame],
+                                    AVChannelLayoutKey:audioChannelLayoutData};
     if ([_assetWriter canApplyOutputSettings:outputSetting forMediaType:AVMediaTypeAudio]) {
         _assetAudioInput = [[AVAssetWriterInput alloc] initWithMediaType:AVMediaTypeAudio outputSettings:outputSetting];
         _assetAudioInput.expectsMediaDataInRealTime = YES;

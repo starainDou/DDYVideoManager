@@ -6,10 +6,10 @@
 @interface DDYCameraManager : NSObject
 
 /** 拍照回调 */
-@property (nonatomic, copy) void (^takePhotoBlock)(UIImage *image);
+@property (nonatomic, copy) void (^takeFinishBlock)(UIImage *image);
 
 /** 录制回调 */
-@property (nonatomic, copy) void (^recordBlock)(NSURL *videoURL);
+@property (nonatomic, copy) void (^recordFinishBlock)(NSURL *videoURL);
 
 /** 会话质量 默认AVCaptureSessionPresetHigh */
 @property (nonatomic, copy) NSString *sessionPreset;

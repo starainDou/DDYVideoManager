@@ -26,6 +26,8 @@
 		A49C214220ECD02500ADE09D /* NSLayoutConstraint+MASDebugAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C213520ECD02500ADE09D /* NSLayoutConstraint+MASDebugAdditions.m */; };
 		A49C214320ECD02500ADE09D /* View+MASAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C213720ECD02500ADE09D /* View+MASAdditions.m */; };
 		A49C214420ECD02500ADE09D /* ViewController+MASAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */; };
+		A49C214B20EDC91300ADE09D /* DDYAuthorityManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C214820EDC91300ADE09D /* DDYAuthorityManager.m */; };
+		A49C215020EDEBB300ADE09D /* NSTimer+DDYExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +71,10 @@
 		A49C213820ECD02500ADE09D /* View+MASShorthandAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "View+MASShorthandAdditions.h"; sourceTree = "<group>"; };
 		A49C213920ECD02500ADE09D /* ViewController+MASAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ViewController+MASAdditions.h"; sourceTree = "<group>"; };
 		A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ViewController+MASAdditions.m"; sourceTree = "<group>"; };
+		A49C214720EDC91300ADE09D /* DDYAuthorityManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDYAuthorityManager.h; sourceTree = "<group>"; };
+		A49C214820EDC91300ADE09D /* DDYAuthorityManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDYAuthorityManager.m; sourceTree = "<group>"; };
+		A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSTimer+DDYExtension.m"; sourceTree = "<group>"; };
+		A49C214F20EDEBB300ADE09D /* NSTimer+DDYExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSTimer+DDYExtension.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,7 +107,10 @@
 		A49C20EC20EC9F5E00ADE09D /* DDYVideoManager */ = {
 			isa = PBXGroup;
 			children = (
+				A49C214D20EDE87800ADE09D /* DDYCategory */,
 				A49C212120ECD02400ADE09D /* Masonry */,
+				A49C214620EDC91300ADE09D /* DDYAuthorityManager */,
+				A49C214520EDC59200ADE09D /* DDYVideoPlayer */,
 				A49C210F20ECA21300ADE09D /* DDYCameraManager */,
 				A49C210020EC9FC900ADE09D /* System */,
 			);
@@ -166,6 +175,31 @@
 				A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */,
 			);
 			path = Masonry;
+			sourceTree = "<group>";
+		};
+		A49C214520EDC59200ADE09D /* DDYVideoPlayer */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = DDYVideoPlayer;
+			sourceTree = "<group>";
+		};
+		A49C214620EDC91300ADE09D /* DDYAuthorityManager */ = {
+			isa = PBXGroup;
+			children = (
+				A49C214720EDC91300ADE09D /* DDYAuthorityManager.h */,
+				A49C214820EDC91300ADE09D /* DDYAuthorityManager.m */,
+			);
+			path = DDYAuthorityManager;
+			sourceTree = "<group>";
+		};
+		A49C214D20EDE87800ADE09D /* DDYCategory */ = {
+			isa = PBXGroup;
+			children = (
+				A49C214F20EDEBB300ADE09D /* NSTimer+DDYExtension.h */,
+				A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */,
+			);
+			path = DDYCategory;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -240,6 +274,7 @@
 			files = (
 				A49C213C20ECD02500ADE09D /* MASConstraint.m in Sources */,
 				A49C213F20ECD02500ADE09D /* MASViewAttribute.m in Sources */,
+				A49C215020EDEBB300ADE09D /* NSTimer+DDYExtension.m in Sources */,
 				A49C214420ECD02500ADE09D /* ViewController+MASAdditions.m in Sources */,
 				A49C214120ECD02500ADE09D /* NSArray+MASAdditions.m in Sources */,
 				A49C210D20EC9FC900ADE09D /* ViewController.m in Sources */,
@@ -248,6 +283,7 @@
 				A49C210C20EC9FC900ADE09D /* main.m in Sources */,
 				A49C211220ECA25C00ADE09D /* DDYCameraManager.m in Sources */,
 				A49C214320ECD02500ADE09D /* View+MASAdditions.m in Sources */,
+				A49C214B20EDC91300ADE09D /* DDYAuthorityManager.m in Sources */,
 				A49C213B20ECD02500ADE09D /* MASCompositeConstraint.m in Sources */,
 				A49C214220ECD02500ADE09D /* NSLayoutConstraint+MASDebugAdditions.m in Sources */,
 				A49C213D20ECD02500ADE09D /* MASConstraintMaker.m in Sources */,
