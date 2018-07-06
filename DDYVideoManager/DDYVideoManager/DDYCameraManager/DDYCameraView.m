@@ -17,6 +17,8 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 @property (nonatomic, strong) UIButton *takeButton;
 /** 进度layer */
 @property (nonatomic, strong) CAShapeLayer *progressLayer;
+/** 背景layer */
+@property (nonatomic, strong) CAShapeLayer *shapeLayer;
 /** 定时器 */
 @property (nonatomic, strong) NSTimer *recordTimer;
 /** 时长 s */
@@ -100,26 +102,31 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
         [self.takeButton mas_makeConstraints:^(MASConstraintMaker *make) {
             make.centerX.mas_equalTo(self);
             make.bottom.mas_equalTo(self).offset(-20);
-            make.width.height.mas_equalTo(50);
+            make.width.height.mas_equalTo(60);
         }];
         self.toneButton.hidden = YES;
-        [self addShapeLayer];
     }
     return self;
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self addShapeLayer];
+}
+
 - (void)addShapeLayer {
-    CGRect rect = CGRectMake(0, 0, 50, 50);
-    CGPoint center = CGPointMake(25, 25);
-    UIBezierPath *circlePath = [UIBezierPath bezierPathWithArcCenter:center radius:25 startAngle:-M_PI_2 endAngle:2*M_PI-M_PI_2 clockwise:YES];;
+    CGRect rect = self.takeButton.bounds;
+    CGFloat radius = rect.size.width/2.;
+    CGPoint center = CGPointMake(radius, radius);
+    UIBezierPath *circlePath = [UIBezierPath bezierPathWithArcCenter:center radius:radius startAngle:-M_PI_2 endAngle:2*M_PI-M_PI_2 clockwise:YES];
     
-    CAShapeLayer *shapeLayer = [CAShapeLayer layer];
-    shapeLayer.frame = rect;
-    shapeLayer.lineWidth = 4.0f;
-    shapeLayer.strokeColor = [UIColor whiteColor].CGColor;
-    shapeLayer.fillColor = [UIColor clearColor].CGColor;
-    shapeLayer.path = circlePath.CGPath;
-    [self.takeButton.layer addSublayer:shapeLayer];
+    self.shapeLayer = [CAShapeLayer layer];
+    self.shapeLayer.frame = rect;
+    self.shapeLayer.lineWidth = 4.0f;
+    self.shapeLayer.strokeColor = [UIColor whiteColor].CGColor;
+    self.shapeLayer.fillColor = [UIColor clearColor].CGColor;
+    self.shapeLayer.path = circlePath.CGPath;
+    [self.takeButton.layer addSublayer:self.shapeLayer];
     
     self.progressLayer = [CAShapeLayer layer];
     self.progressLayer.frame = rect;
@@ -132,16 +139,25 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     [self.takeButton.layer addSublayer:_progressLayer];
 }
 
-- (void)startTimer {
+- (void)startRecord{
     self.recordSeconds = 0.;
-    self.recordTimer = [NSTimer ddy_scheduledTimerWithTimeInterval:1. repeats:YES block:^(NSTimer *timer) {
-        self.recordSeconds += 1.;
+    self.progressLayer.strokeEnd = 0./10.;
+    self.recordTimer = [NSTimer ddy_scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
+        self.recordSeconds += 0.1;
+        self.progressLayer.strokeEnd = self.recordSeconds/10.;
+        if (self.recordSeconds >= 10.) [self stopRecord];
     }];
+    if (self.recordBlock) self.recordBlock(YES);
+    self.shapeLayer.transform = CATransform3DMakeScale(1.3, 1.3, 1);
+    self.progressLayer.transform = CATransform3DMakeScale(1.3, 1.3, 1);
 }
 
-- (void)stopTimer {
+- (void)stopRecord {
     [self.recordTimer invalidate];
     self.recordTimer = nil;
+    if (self.recordBlock) self.recordBlock(NO);
+    self.shapeLayer.transform = CATransform3DIdentity;
+    self.progressLayer.transform = CATransform3DIdentity;
 }
 
 #pragma mark - 事件处理
@@ -171,11 +187,10 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 
 #pragma mark 长按录制与结束
 - (void)handleLongPress:(UILongPressGestureRecognizer *)longP {
-    //判断长按时的状态
     if (longP.state == UIGestureRecognizerStateBegan) {
-        if (self.recordBlock) self.recordBlock(YES);
+        [self startRecord];
     } else if (longP.state == UIGestureRecognizerStateEnded) {
-        if (self.recordBlock) self.recordBlock(NO);
+        [self stopRecord];
     } else if (longP.state == UIGestureRecognizerStateChanged) {
         
     }

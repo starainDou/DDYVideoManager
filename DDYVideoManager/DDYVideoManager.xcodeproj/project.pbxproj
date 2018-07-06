@@ -110,7 +110,6 @@
 				A49C214D20EDE87800ADE09D /* DDYCategory */,
 				A49C212120ECD02400ADE09D /* Masonry */,
 				A49C214620EDC91300ADE09D /* DDYAuthorityManager */,
-				A49C214520EDC59200ADE09D /* DDYVideoPlayer */,
 				A49C210F20ECA21300ADE09D /* DDYCameraManager */,
 				A49C210020EC9FC900ADE09D /* System */,
 			);
@@ -175,13 +174,6 @@
 				A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */,
 			);
 			path = Masonry;
-			sourceTree = "<group>";
-		};
-		A49C214520EDC59200ADE09D /* DDYVideoPlayer */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = DDYVideoPlayer;
 			sourceTree = "<group>";
 		};
 		A49C214620EDC91300ADE09D /* DDYAuthorityManager */ = {

@@ -4,26 +4,22 @@
 typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 
 @interface DDYCameraManager ()<AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate>
+/** 串行队列 */
+@property (nonatomic, strong) dispatch_queue_t cameraSerialQueue;
+/** 视频预览层 */
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
 /** 捕获会话 */
 @property (nonatomic, strong) AVCaptureSession *captureSession;
-/** 视频输入 */
-@property (nonatomic, strong) AVCaptureDeviceInput *videoInput;
 /** 音频输入 */
 @property (nonatomic, strong) AVCaptureDeviceInput *audioInput;
+/** 视频输入 */
+@property (nonatomic, strong) AVCaptureDeviceInput *videoInput;
 /** 图片输出 */
 @property (nonatomic, strong) AVCaptureStillImageOutput *imageOutput;
-/** 视频输出 */
-@property (nonatomic, strong) AVCaptureVideoDataOutput *videoOutput;
 /** 音频输出 */
 @property (nonatomic, strong) AVCaptureAudioDataOutput *audioOutput;
-/** 图片连接 */
-@property (nonatomic, strong) AVCaptureConnection *imageConnection;
-/** 视频连接 */
-@property (nonatomic, strong) AVCaptureConnection *videoConnection;
-/** 音频连接 */
-@property (nonatomic, strong) AVCaptureConnection *audioConnection;
-/** 视频预览层 */
-@property (nonatomic, strong) AVCaptureVideoPreviewLayer *captureVideoPreviewLayer;
+/** 视频输出 */
+@property (nonatomic, strong) AVCaptureVideoDataOutput *videoOutput;
 /** 视频URL */
 @property (nonatomic, strong) NSURL *videoURL;
 /** 资源写入 */
@@ -38,33 +34,63 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 @property (nonatomic, strong) AVAssetWriterInputPixelBufferAdaptor *pixelBufferAdaptor;
 /** 格式描述 */
 @property (nonatomic, assign) CMFormatDescriptionRef audioFormatDescription;
+/** 时间 */
+@property (nonatomic, assign) CMTime currentSampleTime;
 
 @end
 
 @implementation DDYCameraManager
 
-- (void)ddy_CameraWithContainer:(UIView *)container {
-    [self setupCaptureSession];
-    [self setupSessionInput];
-    [self setupSessionOutput];
-    
-    _captureVideoPreviewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:_captureSession];
-    _captureVideoPreviewLayer.frame = container.layer.bounds;
-    _captureVideoPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
-    [container.layer addSublayer:_captureVideoPreviewLayer];
-    [container.layer setMasksToBounds:YES];
-    
-    [self ddy_SetFlashMode:AVCaptureFlashModeAuto];
-}
+#pragma mark - 懒加载
 
-#pragma mark 初始化会话
-- (void)setupCaptureSession {
-    _captureSession = [[AVCaptureSession alloc] init];
-    if ([_captureSession canSetSessionPreset:self.sessionPreset]) {
-        [_captureSession setSessionPreset:self.sessionPreset];
+- (dispatch_queue_t)cameraSerialQueue {
+    if (!_cameraSerialQueue) {
+        _cameraSerialQueue = dispatch_queue_create("com.ddyCamera.serialQueue", DISPATCH_QUEUE_SERIAL);
     }
+    return _cameraSerialQueue;
 }
 
+- (AVCaptureVideoPreviewLayer *)previewLayer {
+    if (!_previewLayer) {
+        _previewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:self.captureSession];
+        _previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        _previewLayer.frame = [UIScreen mainScreen].bounds;
+    }
+    return _previewLayer;
+}
+
+- (AVCaptureSession *)captureSession {
+    if (!_captureSession) {
+        _captureSession = [[AVCaptureSession alloc] init];
+        // 会话质量
+        if ([_captureSession canSetSessionPreset:self.sessionPreset]) {
+            [_captureSession setSessionPreset:self.sessionPreset];
+        }
+        // 视频输入
+        if ([_captureSession canAddInput:self.videoInput]) {
+            [_captureSession addInput:self.videoInput];
+        }
+        // 音频输入
+        if ([_captureSession canAddInput:self.audioInput]) {
+            [_captureSession addInput:self.audioInput];
+        }
+        // 图片输出
+        if ([_captureSession canAddOutput:self.imageOutput]) {
+            [_captureSession addOutput:self.imageOutput];
+        }
+        // 视频输出
+        if ([_captureSession canAddOutput:self.videoOutput]) {
+            [_captureSession addOutput:self.videoOutput];
+        }
+        // 音频输出
+        if ([_captureSession canAddOutput:self.audioOutput]) {
+            [_captureSession addOutput:self.audioOutput];
+        }
+    }
+    return _captureSession;
+}
+
+#pragma mark 会话质量
 - (NSString *)sessionPreset {
     if (!_sessionPreset) {
         _sessionPreset = AVCaptureSessionPresetHigh;
@@ -72,51 +98,68 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
     return _sessionPreset;
 }
 
-#pragma mark 添加输入
-- (void)setupSessionInput {
-    // 视频输入
-    AVCaptureDevice *videoDevice = [self getCameraDeviceWithPosition:AVCaptureDevicePositionBack];
-    _videoInput = [[AVCaptureDeviceInput alloc] initWithDevice:videoDevice error:nil];
-    if ([_captureSession canAddInput:_videoInput]) {
-        [_captureSession addInput:_videoInput];
+#pragma mark 音频输入
+- (AVCaptureDeviceInput *)audioInput {
+    if (!_audioInput) {
+        AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+        _audioInput = [[AVCaptureDeviceInput alloc] initWithDevice:audioDevice error:nil];
     }
-    // 音频输入
-    AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
-    _audioInput = [[AVCaptureDeviceInput alloc] initWithDevice:audioDevice error:nil];
-    if ([_captureSession canAddInput:_audioInput]) {
-        [_captureSession addInput:_audioInput];
-    }
+    return _audioInput;
 }
 
-#pragma mark 添加输出
-- (void)setupSessionOutput {
-    dispatch_queue_t queue = dispatch_queue_create("com.ddyCamera.serialQueue", DISPATCH_QUEUE_SERIAL);
-    // 图片输出
-    _imageOutput = [[AVCaptureStillImageOutput alloc] init];
-    _imageOutput.outputSettings = @{AVVideoCodecKey:AVVideoCodecJPEG};
-    if ([_captureSession canAddOutput:_imageOutput]) {
-        [_captureSession addOutput:_imageOutput];
+#pragma mark 视频输入
+- (AVCaptureDeviceInput *)videoInput {
+    if (!_videoInput) {
+        AVCaptureDevice *videoDevice = [self getCameraDeviceWithPosition:AVCaptureDevicePositionBack];
+        _videoInput = [[AVCaptureDeviceInput alloc] initWithDevice:videoDevice error:nil];
     }
+    return _videoInput;
+}
+
+#pragma mark 图片输出
+- (AVCaptureStillImageOutput *)imageOutput {
+    if (!_imageOutput) {
+        _imageOutput = [[AVCaptureStillImageOutput alloc] init];
+        _imageOutput.outputSettings = @{AVVideoCodecKey:AVVideoCodecJPEG};
+    }
+    return _imageOutput;
+}
+
+#pragma mark 音频输出
+- (AVCaptureAudioDataOutput *)audioOutput {
+    if (!_audioOutput) {
+        _audioOutput = [[AVCaptureAudioDataOutput alloc] init];
+        [_audioOutput setSampleBufferDelegate:self queue:self.cameraSerialQueue];
+    }
+    return _audioOutput;
+}
+
+#pragma mark 视频输出
+- (AVCaptureVideoDataOutput *)videoOutput {
+    if (!_videoOutput) {
+        _videoOutput = [[AVCaptureVideoDataOutput alloc] init];
+        _videoOutput.alwaysDiscardsLateVideoFrames = YES; // 是否允许卡顿时丢帧
+        [_videoOutput setSampleBufferDelegate:self queue:self.cameraSerialQueue];
+    }
+    return _videoOutput;
+}
+
++ (instancetype)ddy_CameraWithContainerView:(UIView *)view {
+    return [[self alloc] initWithContainerView:view];
+}
+
+- (instancetype)initWithContainerView:(UIView *)view {
+    if (self = [super init]) {
+        [self setupObserver];
+        [view.layer insertSublayer:self.previewLayer atIndex:0];
+        [self.captureSession startRunning];
+    }
+    return self;
+}
+
+#pragma mark 添加监听
+- (void)setupObserver {
     
-    // 视频输出
-    _videoOutput = [[AVCaptureVideoDataOutput alloc] init];
-    _videoOutput.alwaysDiscardsLateVideoFrames = YES; // 是否允许卡顿时丢帧
-    _videoOutput.videoSettings = @{(id)kCVPixelBufferPixelFormatTypeKey:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA]};
-    [_videoOutput setSampleBufferDelegate:self queue:queue];
-    if ([_captureSession canAddOutput:_videoOutput]) {
-        [_captureSession addOutput:_videoOutput];
-    }
-    // 在AVCaptureInput和AVCaptureOutput之间建立连接。AVCaptureSession必须从AVCaptureConnection中获取实际数据
-    _videoConnection = [_videoOutput connectionWithMediaType:AVMediaTypeVideo];
-    _videoConnection.videoOrientation = AVCaptureVideoOrientationPortrait; // 设置视频方向, 若不设置, 视频默认是旋转90°的
-    
-    // 音频输出
-    _audioOutput = [[AVCaptureAudioDataOutput alloc] init];
-    [_audioOutput setSampleBufferDelegate:self queue:queue];
-    if ([_captureSession canAddOutput:_audioOutput]) {
-        [_captureSession addOutput:_audioOutput];
-    }
-    _audioConnection = [_audioOutput connectionWithMediaType:AVMediaTypeAudio];
 }
 
 #pragma mark 开启捕捉会话
@@ -210,12 +253,12 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 
 #pragma mark 拍照
 - (void)ddy_TakePhotos {
-    _imageConnection = [_imageOutput connectionWithMediaType:AVMediaTypeVideo];
-    if (_imageConnection.isVideoOrientationSupported) {
-        _imageConnection.videoOrientation = AVCaptureVideoOrientationPortrait;
+    AVCaptureConnection *imageConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
+    if (imageConnection.isVideoOrientationSupported) {
+        imageConnection.videoOrientation = AVCaptureVideoOrientationPortrait;
     }
     // 根据连接取得设备输出的数据
-    [_imageOutput captureStillImageAsynchronouslyFromConnection:_imageConnection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
+    [self.imageOutput captureStillImageAsynchronouslyFromConnection:imageConnection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
         if (imageDataSampleBuffer) {
             NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -235,10 +278,14 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 #pragma mark 开始录制视频
 - (void)ddy_StartRecord {
     NSString *path = [NSString stringWithFormat:@"%@ddy_video.mov",NSTemporaryDirectory()];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+    }
     _videoURL = [NSURL fileURLWithPath:path];
     [self setAssetWriterVideoInput];
     [self setAssetWriterAudioInput];
     [_assetWriter startWriting];
+    [_assetWriter startSessionAtSourceTime:_currentSampleTime];
 }
 
 #pragma mark 结束录制视频
@@ -281,25 +328,32 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 
 #pragma mark 视频写入设置
 - (void)setAssetWriterVideoInput {
-    NSError *error = nil;
-    _assetWriter = [[AVAssetWriter alloc] initWithURL:_videoURL fileType:AVFileTypeQuickTimeMovie error:&error];
+    // 初始化写入媒体类型为MP4类型
+    _assetWriter = [AVAssetWriter assetWriterWithURL:self.videoURL fileType:AVFileTypeMPEG4 error:nil];
+    // 使其更适合在网络上播放
+    _assetWriter.shouldOptimizeForNetworkUse = YES;
+    
+    //写入视频大小
+    NSInteger numPixels = [UIScreen mainScreen].bounds.size.width * [UIScreen mainScreen].bounds.size.height;
+    //每像素比特
+    CGFloat bitsPerPixel = 6.0;
+    NSInteger bitsPerSecond = numPixels * bitsPerPixel;
+    // 码率和帧率设置
+    NSDictionary *compressionProperties = @{ AVVideoAverageBitRateKey:@(bitsPerSecond),
+                                             AVVideoExpectedSourceFrameRateKey:@(30),
+                                             AVVideoMaxKeyFrameIntervalKey:@(30),
+                                             AVVideoProfileLevelKey:AVVideoProfileLevelH264BaselineAutoLevel};
+    
     NSDictionary *outputSetting = @{AVVideoCodecKey:AVVideoCodecH264,
-                                    AVVideoWidthKey:@(_videoDimensions.width),
-                                    AVVideoHeightKey:@(_videoDimensions.height) };
+                                    AVVideoWidthKey:@([UIScreen mainScreen].bounds.size.width),
+                                    AVVideoHeightKey:@([UIScreen mainScreen].bounds.size.height),
+                                    AVVideoCompressionPropertiesKey:compressionProperties};
     _assetVideoInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:outputSetting];
     // 要从captureSession实时获取数据
     _assetVideoInput.expectsMediaDataInRealTime = YES;
     _assetVideoInput.transform = CGAffineTransformIdentity;
-
-    NSDictionary *pixelBufferAttributes = @{(NSString *)kCVPixelBufferPixelFormatTypeKey:[NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA],
-                                                  (NSString *)kCVPixelBufferWidthKey:@(_videoDimensions.width),
-                                                  (NSString *)kCVPixelBufferHeightKey:@(_videoDimensions.height),
-                                                  (NSString *)kCVPixelFormatOpenGLESCompatibility:(NSNumber *)kCFBooleanTrue};
-    // AVCaptureMovieFileOutput和AVAssetWriterInputPixelBufferAdaptor有冲突
-    _pixelBufferAdaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:_assetVideoInput
-                                                                                           sourcePixelBufferAttributes:pixelBufferAttributes];
-    if ([_assetWriter canAddInput:_assetVideoInput]) {
-        [_assetWriter addInput:_assetVideoInput];
+    if ([self.assetWriter canAddInput:_assetVideoInput]) {
+        [self.assetWriter addInput:_assetVideoInput];
     }
 }
 
@@ -315,23 +369,29 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
                                     AVEncoderBitRatePerChannelKey:[NSNumber numberWithInt:64000],
                                     AVNumberOfChannelsKey:[NSNumber numberWithInteger:audioASBD->mChannelsPerFrame],
                                     AVChannelLayoutKey:audioChannelLayoutData};
-    if ([_assetWriter canApplyOutputSettings:outputSetting forMediaType:AVMediaTypeAudio]) {
+    if ([self.assetWriter canApplyOutputSettings:outputSetting forMediaType:AVMediaTypeAudio]) {
         _assetAudioInput = [[AVAssetWriterInput alloc] initWithMediaType:AVMediaTypeAudio outputSettings:outputSetting];
         _assetAudioInput.expectsMediaDataInRealTime = YES;
         
-        if ([_assetWriter canAddInput:_assetAudioInput]) {
-            [_assetWriter addInput:_assetAudioInput];
+        if ([self.assetWriter canAddInput:_assetAudioInput]) {
+            [self.assetWriter addInput:_assetAudioInput];
         }
     }
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
-    @autoreleasepool {
-        if (captureOutput == _videoOutput) {
-            _videoDimensions = CMVideoFormatDescriptionGetDimensions(CMSampleBufferGetFormatDescription(sampleBuffer));
-        } else {
-            _audioFormatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
+    if (captureOutput == self.videoOutput) {
+        CMVideoFormatDescriptionRef formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
+        _videoDimensions = CMVideoFormatDescriptionGetDimensions(formatDescription);
+        _currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
+        if (_assetVideoInput && _assetVideoInput.readyForMoreMediaData) {
+            [_assetVideoInput appendSampleBuffer:sampleBuffer];NSLog(@"777777");
+        }
+    } else if (captureOutput == self.audioOutput) {
+        _audioFormatDescription = CMSampleBufferGetFormatDescription(sampleBuffer);
+        if (_assetAudioInput && _assetAudioInput.readyForMoreMediaData) {
+            [_assetAudioInput appendSampleBuffer:sampleBuffer];NSLog(@"555555");
         }
     }
 }

@@ -15,7 +15,7 @@
 @property (nonatomic, copy) NSString *sessionPreset;
 
 /** 初始化 */
-- (void)ddy_CameraWithContainer:(UIView *)container;
++ (instancetype)ddy_CameraWithContainerView:(UIView *)view;
 
 /** 开启捕捉会话 */
 - (void)ddy_StartCaptureSession;

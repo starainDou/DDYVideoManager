@@ -1,11 +1,21 @@
 #import "ViewController.h"
+#import "DDYCameraController.h"
 #import "DDYAuthorityManager.h"
 
 @interface ViewController ()
 
+@property (nonatomic, strong) UIImageView *imageView;
+
 @end
 
 @implementation ViewController
+
+- (UIImageView *)imageView {
+    if (!_imageView) {
+        _imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 140, 120, 120)];
+    }
+    return _imageView;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -20,15 +30,22 @@
         button;
     });
     [self.view addSubview:takeButton];
+    [self.view addSubview:self.imageView];
 }
 
 - (void)handleTake {
-    [DDYAuthorityManager ddy_CameraAuthAlertShow:YES result:^(BOOL isAuthorized, AVAuthorizationStatus authStatus) {
-        [DDYAuthorityManager ddy_AudioAuthAlertShow:YES result:^(BOOL isAuthorized, AVAuthorizationStatus authStatus) {
-            UIViewController *vc = [NSClassFromString(@"DDYCameraController") new];
-            [self presentViewController:vc animated:YES completion:^{ }];
-        }];
-    }];
+    [DDYAuthorityManager ddy_AudioAuthAlertShow:YES success:^{
+        NSLog(@"audio");
+        [DDYAuthorityManager ddy_CameraAuthAlertShow:YES success:^{
+            NSLog(@"camera");
+            DDYCameraController *cameraVC = [DDYCameraController new];
+            [cameraVC setTakePhotoBlock:^(UIImage *image, UIViewController *vc) {
+                self.imageView.image = image;
+                [vc dismissViewControllerAnimated:YES completion:^{   }];
+            }];
+            [self presentViewController:cameraVC animated:YES completion:^{ }];
+        } fail:^(AVAuthorizationStatus authStatus) { }];
+    } fail:^(AVAuthorizationStatus authStatus) { }];
     
 }
 

@@ -14,35 +14,23 @@
 
 @implementation DDYCameraController
 
-- (DDYCameraManager *)cameraManager {
-    if (!_cameraManager) {
-        __weak __typeof__ (self)weakSelf = self;
-        _cameraManager = [[DDYCameraManager alloc] init];
-        [_cameraManager setTakeFinishBlock:^(UIImage *image) {[weakSelf handleTakeFinish:image];}];
-        [_cameraManager setRecordFinishBlock:^(NSURL *videoURL) {[weakSelf handleRecordFinish:videoURL];}];
-    }
-    return _cameraManager;
-}
-
-- (DDYCameraView *)cameraView {
-    if (!_cameraView) {
-        __weak __typeof__ (self)weakSelf = self;
-        _cameraView = [[DDYCameraView alloc] initWithFrame:self.view.bounds];
-        [_cameraView setBackBlock:^{[weakSelf handleBack];}];
-        [_cameraView setToneBlock:^(BOOL isOn) {[weakSelf handleTone:isOn];}];
-        [_cameraView setLightBlock:^(BOOL isOn) {[weakSelf handleLight:isOn];}];
-        [_cameraView setToggleBlock:^{[weakSelf handleToggle];}];
-        [_cameraView setTakeBlock:^{[weakSelf handleTake];}];
-        [_cameraView setRecordBlock:^(BOOL isStart) {[weakSelf handleRecord:isStart];}];
-    }
-    return _cameraView;
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     [self.view setBackgroundColor:[UIColor blackColor]];
-    [self.cameraManager ddy_CameraWithContainer:self.view];
-    [self.view addSubview:self.cameraView];
+    
+    __weak __typeof__ (self)weakSelf = self;
+    _cameraManager = [DDYCameraManager ddy_CameraWithContainerView:self.view];
+    [_cameraManager setTakeFinishBlock:^(UIImage *image) {[weakSelf handleTakeFinish:image];}];
+    [_cameraManager setRecordFinishBlock:^(NSURL *videoURL) {[weakSelf handleRecordFinish:videoURL];}];
+    
+    _cameraView = [[DDYCameraView alloc] initWithFrame:self.view.bounds];
+    [_cameraView setBackBlock:^{[weakSelf handleBack];}];
+    [_cameraView setToneBlock:^(BOOL isOn) {[weakSelf handleTone:isOn];}];
+    [_cameraView setLightBlock:^(BOOL isOn) {[weakSelf handleLight:isOn];}];
+    [_cameraView setToggleBlock:^{[weakSelf handleToggle];}];
+    [_cameraView setTakeBlock:^{[weakSelf handleTake];}];
+    [_cameraView setRecordBlock:^(BOOL isStart) {[weakSelf handleRecord:isStart];}];
+    [self.view addSubview:_cameraView];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
