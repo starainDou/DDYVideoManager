@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A481C6A320F3152F0052691B /* DDYCameraTool.m in Sources */ = {isa = PBXBuildFile; fileRef = A481C6A220F3152F0052691B /* DDYCameraTool.m */; };
 		A49C210920EC9FC900ADE09D /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C210220EC9FC900ADE09D /* AppDelegate.m */; };
 		A49C210A20EC9FC900ADE09D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A49C210320EC9FC900ADE09D /* LaunchScreen.storyboard */; };
 		A49C210B20EC9FC900ADE09D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A49C210520EC9FC900ADE09D /* Info.plist */; };
@@ -31,6 +32,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A481C6A120F3152F0052691B /* DDYCameraTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DDYCameraTool.h; sourceTree = "<group>"; };
+		A481C6A220F3152F0052691B /* DDYCameraTool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DDYCameraTool.m; sourceTree = "<group>"; };
 		A49C20EA20EC9F5E00ADE09D /* DDYVideoManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DDYVideoManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A49C210120EC9FC900ADE09D /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		A49C210220EC9FC900ADE09D /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -140,6 +143,8 @@
 				A49C211A20ECB13100ADE09D /* DDYCameraController.m */,
 				A49C211C20ECB25400ADE09D /* DDYCameraView.h */,
 				A49C211D20ECB25400ADE09D /* DDYCameraView.m */,
+				A481C6A120F3152F0052691B /* DDYCameraTool.h */,
+				A481C6A220F3152F0052691B /* DDYCameraTool.m */,
 			);
 			path = DDYCameraManager;
 			sourceTree = "<group>";
@@ -279,6 +284,7 @@
 				A49C213B20ECD02500ADE09D /* MASCompositeConstraint.m in Sources */,
 				A49C214220ECD02500ADE09D /* NSLayoutConstraint+MASDebugAdditions.m in Sources */,
 				A49C213D20ECD02500ADE09D /* MASConstraintMaker.m in Sources */,
+				A481C6A320F3152F0052691B /* DDYCameraTool.m in Sources */,
 				A49C211E20ECB25400ADE09D /* DDYCameraView.m in Sources */,
 				A49C211B20ECB13100ADE09D /* DDYCameraController.m in Sources */,
 				A49C210920EC9FC900ADE09D /* AppDelegate.m in Sources */,

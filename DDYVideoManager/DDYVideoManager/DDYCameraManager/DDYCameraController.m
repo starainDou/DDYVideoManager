@@ -26,7 +26,7 @@
     _cameraView = [[DDYCameraView alloc] initWithFrame:self.view.bounds];
     [_cameraView setBackBlock:^{[weakSelf handleBack];}];
     [_cameraView setToneBlock:^(BOOL isOn) {[weakSelf handleTone:isOn];}];
-    [_cameraView setLightBlock:^(BOOL isOn) {[weakSelf handleLight:isOn];}];
+    [_cameraView setLightBlock:^(BOOL isRecording, BOOL isOn) {[weakSelf handleLight:isOn isRecording:isRecording];}];
     [_cameraView setToggleBlock:^{[weakSelf handleToggle];}];
     [_cameraView setTakeBlock:^{[weakSelf handleTake];}];
     [_cameraView setRecordBlock:^(BOOL isStart) {[weakSelf handleRecord:isStart];}];
@@ -57,8 +57,12 @@
 }
 
 #pragma mark 闪光灯模式
-- (void)handleLight:(BOOL)isOn {
-    [self.cameraManager ddy_SetFlashMode:isOn ? AVCaptureFlashModeOff : AVCaptureFlashModeOn];
+- (void)handleLight:(BOOL)isOn isRecording:(BOOL)isRecording {
+    if (isRecording) {
+         [self.cameraManager ddy_SetTorchMode:isOn ? AVCaptureTorchModeOn : AVCaptureTorchModeOff];
+    } else {
+         [self.cameraManager ddy_SetFlashMode:isOn ? AVCaptureFlashModeOn : AVCaptureFlashModeOff];
+    }
 }
 
 #pragma mark 切换摄像头
@@ -73,7 +77,7 @@
 
 #pragma mark 录制开始与结束
 - (void)handleRecord:(BOOL)isStart {
-    isStart ? [self.cameraManager ddy_StartRecord] : [self.cameraManager ddy_StopRecord];
+    isStart ? [self.cameraManager ddy_StartRecorder] : [self.cameraManager ddy_StopRecorder];
 }
 
 #pragma mark 拍照成功

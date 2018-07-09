@@ -7,7 +7,7 @@
 /** 曝光模式 */
 @property (nonatomic, copy) void (^toneBlock)(BOOL isOn);
 /** 闪光灯模式 */
-@property (nonatomic, copy) void (^lightBlock)(BOOL isOn);
+@property (nonatomic, copy) void (^lightBlock)(BOOL isRecording, BOOL isOn);
 /** 切换摄像头 */
 @property (nonatomic, copy) void (^toggleBlock)(void);
 /** 点击拍照 */

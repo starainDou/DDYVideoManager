@@ -23,6 +23,8 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 @property (nonatomic, strong) NSTimer *recordTimer;
 /** 时长 s */
 @property (nonatomic, assign) CGFloat recordSeconds;
+/** 是否录制 */
+@property (nonatomic, assign) BOOL isRecording;
 
 @end
 
@@ -131,7 +133,7 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     self.progressLayer = [CAShapeLayer layer];
     self.progressLayer.frame = rect;
     self.progressLayer.lineWidth = 4.0f;
-    self.progressLayer.strokeColor = [UIColor redColor].CGColor;
+    self.progressLayer.strokeColor = [UIColor blueColor].CGColor;
     self.progressLayer.fillColor = [UIColor clearColor].CGColor;
     self.progressLayer.lineCap = kCALineCapSquare;
     self.progressLayer.path = circlePath.CGPath;
@@ -148,8 +150,10 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
         if (self.recordSeconds >= 10.) [self stopRecord];
     }];
     if (self.recordBlock) self.recordBlock(YES);
-    self.shapeLayer.transform = CATransform3DMakeScale(1.3, 1.3, 1);
-    self.progressLayer.transform = CATransform3DMakeScale(1.3, 1.3, 1);
+    self.shapeLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
+    self.progressLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
+    self.isRecording = YES;
+    if (self.lightBlock) self.lightBlock(self.isRecording, self.lightButton.selected);
 }
 
 - (void)stopRecord {
@@ -158,6 +162,7 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     if (self.recordBlock) self.recordBlock(NO);
     self.shapeLayer.transform = CATransform3DIdentity;
     self.progressLayer.transform = CATransform3DIdentity;
+    self.isRecording = NO;
 }
 
 #pragma mark - 事件处理
@@ -177,7 +182,7 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 
 #pragma mark 切换闪光灯模式
 - (void)handleLight:(UIButton *)sender {
-    if (self.lightBlock) self.lightBlock((sender.selected = !sender.selected));
+    if (self.lightBlock) self.lightBlock(self.isRecording, (sender.selected = !sender.selected));
 }
 
 #pragma mark 拍照

@@ -5,12 +5,12 @@
 
 @interface DDYCameraManager : NSObject
 
+/** 视屏格式 默认 AVFileTypeMPEG4 */
+@property (nonatomic, strong) AVFileType videoType;
 /** 拍照回调 */
 @property (nonatomic, copy) void (^takeFinishBlock)(UIImage *image);
-
 /** 录制回调 */
 @property (nonatomic, copy) void (^recordFinishBlock)(NSURL *videoURL);
-
 /** 会话质量 默认AVCaptureSessionPresetHigh */
 @property (nonatomic, copy) NSString *sessionPreset;
 
@@ -42,9 +42,12 @@
 - (void)ddy_palySystemTakePhotoSound;
 
 /** 开始录制视频 */
-- (void)ddy_StartRecord;
+- (void)ddy_StartRecorder;
 
 /** 结束录制视频 */
-- (void)ddy_StopRecord;
+- (void)ddy_StopRecorder;
+
+/** 录制重置 */
+- (void)ddy_ResetRecorder;
 
 @end
