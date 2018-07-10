@@ -35,9 +35,7 @@
 
 - (void)handleTake {
     [DDYAuthorityManager ddy_AudioAuthAlertShow:YES success:^{
-        NSLog(@"audio");
         [DDYAuthorityManager ddy_CameraAuthAlertShow:YES success:^{
-            NSLog(@"camera");
             DDYCameraController *cameraVC = [DDYCameraController new];
             [cameraVC setTakePhotoBlock:^(UIImage *image, UIViewController *vc) {
                 self.imageView.image = image;

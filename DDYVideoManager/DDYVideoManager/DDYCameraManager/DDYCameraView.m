@@ -1,6 +1,5 @@
 #import "DDYCameraView.h"
 #import "Masonry.h"
-#import "NSTimer+DDYExtension.h"
 
 static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageNamed:[NSString stringWithFormat:@"DDYCamera.bundle/%@", imageName]];}
 
@@ -20,7 +19,7 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 /** 背景layer */
 @property (nonatomic, strong) CAShapeLayer *shapeLayer;
 /** 定时器 */
-@property (nonatomic, strong) NSTimer *recordTimer;
+@property (nonatomic, strong) dispatch_source_t recordTimer;
 /** 是否录制 */
 @property (nonatomic, assign) BOOL isRecording;
 /** 聚焦框 */
@@ -198,25 +197,32 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     self.durationLabel.hidden = !self.isRecording;
     self.shapeLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
     self.progressLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
-    
-    self.progressLayer.strokeEnd = 0./10.;
-    static CGFloat recordSeconds = 0.;
-    self.durationLabel.text = @"0s";
-    self.recordTimer = [NSTimer ddy_scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
-        if (recordSeconds >= 10.0) {
-            [self stopRecord];
-        } else {
-            recordSeconds += 0.1;
-            self.durationLabel.text = [NSString stringWithFormat:@"%.0fs", floorf(recordSeconds)];
-            self.progressLayer.strokeEnd = recordSeconds/10.;
-        }NSLog(@"%f", recordSeconds);
-    }];
+    __block NSInteger recordSeconds = 0.;
+    self.recordTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(0, 0));
+    dispatch_source_set_timer(self.recordTimer, dispatch_walltime(NULL, 0), 0.1 * NSEC_PER_SEC, 0);
+    dispatch_source_set_event_handler(self.recordTimer, ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (recordSeconds == 100) {
+                [self stopRecord];
+            } else {
+                recordSeconds ++;
+                self.durationLabel.text = [NSString stringWithFormat:@"%lds", recordSeconds/10];
+                self.progressLayer.strokeEnd = recordSeconds/100.f;
+            } 
+        });
+    });
+    dispatch_source_set_cancel_handler(self.recordTimer, ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.recordTimer = nil;
+            recordSeconds = 0.;
+        });
+    });
+    dispatch_resume(self.recordTimer);
 }
 
 - (void)stopRecord {
     if (self.isRecording) {
-        [self.recordTimer invalidate];
-        self.recordTimer = nil;
+        dispatch_source_cancel(self.recordTimer);
         self.shapeLayer.transform = CATransform3DIdentity;
         self.progressLayer.transform = CATransform3DIdentity;
         self.isRecording = NO;
@@ -256,8 +262,6 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
         [self startRecord];
     } else if (longP.state == UIGestureRecognizerStateEnded) {
         [self stopRecord];
-    } else if (longP.state == UIGestureRecognizerStateChanged) {
-        
     }
 }
 

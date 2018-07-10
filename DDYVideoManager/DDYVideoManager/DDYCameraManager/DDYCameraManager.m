@@ -288,8 +288,6 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
                 [strongSelf ddy_SetTorchMode:AVCaptureTorchModeOff];
             }
             [captureDevice setFlashMode:flashMode];
-        } else {
-            NSLog(@"设备不支持闪光灯");
         }
     }];
 }
@@ -305,18 +303,11 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
                 [strongSelf ddy_SetFlashMode:AVCaptureFlashModeOff];
             }
             [captureDevice setTorchMode:torchMode];
-        } else {
-            NSLog(@"设备不支持闪光灯");
         }
     }];
 }
 
 #pragma mark 光感系数
-/**
- AVCaptureDevice *captureDevice = [self.videoInput device];
- CGFloat currentISO = captureDevice.ISO;
- NSLog(@"%f_%f", currentISO, captureDevice.activeFormat.maxISO);
- */
 - (void)ddy_ISO:(BOOL)isMAX {
     [self changeDeviceProperty:^(AVCaptureDevice *captureDevice) {
         CGFloat maxISO = captureDevice.activeFormat.maxISO;
@@ -386,7 +377,7 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 }
 
 #pragma mark 结束录制视频
-- (void)ddy_StopRecorder {NSLog(@"ENNNNNNNNND");
+- (void)ddy_StopRecorder {
     __weak __typeof__ (self)weakSelf = self;
     [self.assetWriter finishWritingWithCompletionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -413,43 +404,44 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 #pragma mark 改变设备属性(闪光灯,手电筒,切换摄像头)
 - (void)changeDeviceProperty:(PropertyChangeBlock)propertyChange {
     AVCaptureDevice *captureDevice = [self.videoInput device];
-    NSError *error = nil;
     // 注意改变设备属性前先加锁,调用完解锁
-    if ([captureDevice lockForConfiguration:&error]) {
+    if ([captureDevice lockForConfiguration:nil]) {
         propertyChange(captureDevice);
         [captureDevice unlockForConfiguration];
     }
-    if (error) {
-        NSLog(@"changeDevicePropertyError:%@",error.localizedDescription);
-    };
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
-    // 录制
-    if (self.isRecording) {
-        if (!_assetWriter) {
-            [self.assetWriter startWriting];
-            [self.assetWriter startSessionAtSourceTime:CMSampleBufferGetPresentationTimeStamp(sampleBuffer)];
-        }
-        
-        if (CMSampleBufferDataIsReady(sampleBuffer) && self.assetWriter.status == AVAssetWriterStatusWriting) {
-            CFRetain(sampleBuffer);
-            if (captureOutput == self.videoOutput && self.assetVideoInput.readyForMoreMediaData) {
-                [self.assetVideoInput appendSampleBuffer:sampleBuffer];//NSLog(@"video_000");
-            } else if (captureOutput == self.audioOutput && self.assetAudioInput.readyForMoreMediaData) {
-                [self.assetAudioInput appendSampleBuffer:sampleBuffer];//NSLog(@"audio_000");
+    @autoreleasepool {
+        // 录制
+        if (self.isRecording) {
+            if (!_assetWriter) {
+                [self.assetWriter startWriting];
+                [self.assetWriter startSessionAtSourceTime:CMSampleBufferGetPresentationTimeStamp(sampleBuffer)];
             }
-            CFRelease(sampleBuffer);
+            
+            if (CMSampleBufferDataIsReady(sampleBuffer) && self.assetWriter.status == AVAssetWriterStatusWriting) {
+                CFRetain(sampleBuffer);
+                if (captureOutput == self.videoOutput && self.assetVideoInput.readyForMoreMediaData) {
+                    [self.assetVideoInput appendSampleBuffer:sampleBuffer];
+                } else if (captureOutput == self.audioOutput && self.assetAudioInput.readyForMoreMediaData) {
+                    [self.assetAudioInput appendSampleBuffer:sampleBuffer];
+                }
+                CFRelease(sampleBuffer);
+            }
         }
-    }
-    // 光强检测
-    CFDictionaryRef metadataDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
-    NSDictionary *metadata = [[NSMutableDictionary alloc] initWithDictionary:(__bridge NSDictionary*)metadataDict];
-    NSDictionary *exifMetadata = [[metadata objectForKey:(NSString *)kCGImagePropertyExifDictionary] mutableCopy];
-    float brightnessValue = [[exifMetadata objectForKey:(NSString *)kCGImagePropertyExifBrightnessValue] floatValue];
-    if (self.brightnessValueBlock) {
-        self.brightnessValueBlock(brightnessValue);
+        // 光强检测
+        if (captureOutput == self.videoOutput) {
+            CFDictionaryRef metadataDict = CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
+            NSDictionary *metadata = [[NSMutableDictionary alloc] initWithDictionary:(__bridge NSDictionary*)metadataDict];
+            CFRelease(metadataDict); 
+            NSDictionary *exifMetadata = [[metadata objectForKey:(NSString *)kCGImagePropertyExifDictionary] mutableCopy];
+            float brightnessValue = [[exifMetadata objectForKey:(NSString *)kCGImagePropertyExifBrightnessValue] floatValue];
+            if (self.brightnessValueBlock) {
+                self.brightnessValueBlock(brightnessValue);
+            }
+        }
     }
 }
 

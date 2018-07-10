@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
-#import <AssetsLibrary/AssetsLibrary.h>
-#import <AVFoundation/AVFoundation.h>
-#import <UIKit/UIKit.h>
+
+@import UIKit;
+@import AVFoundation;
 
 @interface DDYCameraManager : NSObject
 

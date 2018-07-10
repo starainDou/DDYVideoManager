@@ -288,8 +288,6 @@
             if (fail) fail(authStatus);
             if (show) [self showAlertWithAuthName:@"定位"];
         }
-    } else {
-        NSLog(@"Location Services 未开启");
     }
 }
 
@@ -322,11 +320,7 @@
             if (authStatus == HKAuthorizationStatusSharingAuthorized && success) success();
             if (authStatus != HKAuthorizationStatusSharingAuthorized && fail) fail(authStatus);
             if (authStatus != HKAuthorizationStatusSharingAuthorized && show) [self showAlertWithAuthName:@"健康数据"];
-        } else {
-            NSLog(@"type error");
         }
-    } else {
-        NSLog(@"健康数据不可用");
     }
 }
 

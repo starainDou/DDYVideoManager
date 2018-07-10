@@ -28,7 +28,6 @@
 		A49C214320ECD02500ADE09D /* View+MASAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C213720ECD02500ADE09D /* View+MASAdditions.m */; };
 		A49C214420ECD02500ADE09D /* ViewController+MASAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */; };
 		A49C214B20EDC91300ADE09D /* DDYAuthorityManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C214820EDC91300ADE09D /* DDYAuthorityManager.m */; };
-		A49C215020EDEBB300ADE09D /* NSTimer+DDYExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -76,8 +75,6 @@
 		A49C213A20ECD02500ADE09D /* ViewController+MASAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "ViewController+MASAdditions.m"; sourceTree = "<group>"; };
 		A49C214720EDC91300ADE09D /* DDYAuthorityManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDYAuthorityManager.h; sourceTree = "<group>"; };
 		A49C214820EDC91300ADE09D /* DDYAuthorityManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DDYAuthorityManager.m; sourceTree = "<group>"; };
-		A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSTimer+DDYExtension.m"; sourceTree = "<group>"; };
-		A49C214F20EDEBB300ADE09D /* NSTimer+DDYExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSTimer+DDYExtension.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,7 +107,6 @@
 		A49C20EC20EC9F5E00ADE09D /* DDYVideoManager */ = {
 			isa = PBXGroup;
 			children = (
-				A49C214D20EDE87800ADE09D /* DDYCategory */,
 				A49C212120ECD02400ADE09D /* Masonry */,
 				A49C214620EDC91300ADE09D /* DDYAuthorityManager */,
 				A49C210F20ECA21300ADE09D /* DDYCameraManager */,
@@ -190,15 +186,6 @@
 			path = DDYAuthorityManager;
 			sourceTree = "<group>";
 		};
-		A49C214D20EDE87800ADE09D /* DDYCategory */ = {
-			isa = PBXGroup;
-			children = (
-				A49C214F20EDEBB300ADE09D /* NSTimer+DDYExtension.h */,
-				A49C214E20EDEBB300ADE09D /* NSTimer+DDYExtension.m */,
-			);
-			path = DDYCategory;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -271,7 +258,6 @@
 			files = (
 				A49C213C20ECD02500ADE09D /* MASConstraint.m in Sources */,
 				A49C213F20ECD02500ADE09D /* MASViewAttribute.m in Sources */,
-				A49C215020EDEBB300ADE09D /* NSTimer+DDYExtension.m in Sources */,
 				A49C214420ECD02500ADE09D /* ViewController+MASAdditions.m in Sources */,
 				A49C214120ECD02500ADE09D /* NSArray+MASAdditions.m in Sources */,
 				A49C210D20EC9FC900ADE09D /* ViewController.m in Sources */,
