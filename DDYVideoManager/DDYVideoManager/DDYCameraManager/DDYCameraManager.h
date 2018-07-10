@@ -11,6 +11,8 @@
 @property (nonatomic, copy) void (^takeFinishBlock)(UIImage *image);
 /** 录制回调 */
 @property (nonatomic, copy) void (^recordFinishBlock)(NSURL *videoURL);
+/** 光强检测 */
+@property (nonatomic, copy) void (^brightnessValueBlock)(CGFloat brightnessValue);
 /** 会话质量 默认AVCaptureSessionPresetHigh */
 @property (nonatomic, copy) NSString *sessionPreset;
 
@@ -49,5 +51,8 @@
 
 /** 录制重置 */
 - (void)ddy_ResetRecorder;
+
+/** 光感系数 */
+- (void)ddy_ISO:(BOOL)isMAX;
 
 @end

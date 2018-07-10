@@ -22,6 +22,9 @@
     _cameraManager = [DDYCameraManager ddy_CameraWithContainerView:self.view];
     [_cameraManager setTakeFinishBlock:^(UIImage *image) {[weakSelf handleTakeFinish:image];}];
     [_cameraManager setRecordFinishBlock:^(NSURL *videoURL) {[weakSelf handleRecordFinish:videoURL];}];
+    [_cameraManager setBrightnessValueBlock:^(CGFloat brightnessValue) {
+        [weakSelf handleBrightness:brightnessValue];
+    }];
     
     _cameraView = [[DDYCameraView alloc] initWithFrame:self.view.bounds];
     [_cameraView setBackBlock:^{[weakSelf handleBack];}];
@@ -30,6 +33,7 @@
     [_cameraView setToggleBlock:^{[weakSelf handleToggle];}];
     [_cameraView setTakeBlock:^{[weakSelf handleTake];}];
     [_cameraView setRecordBlock:^(BOOL isStart) {[weakSelf handleRecord:isStart];}];
+    [_cameraView setFocusBlock:^(CGPoint point) {[weakSelf handleFocus:point];}];
     [self.view addSubview:_cameraView];
 }
 
@@ -43,7 +47,7 @@
     [self hiddenStatusBar:NO];
 }
 
-#pragma mark - 事件响应
+#pragma mark - UI事件响应
 #pragma mark 返回
 - (void)handleBack {
     if (![self.navigationController popViewControllerAnimated:YES]) {
@@ -53,7 +57,7 @@
 
 #pragma mark 曝光模式
 - (void)handleTone:(BOOL)isOn {
-    
+    [self.cameraManager ddy_ISO:isOn];
 }
 
 #pragma mark 闪光灯模式
@@ -80,6 +84,12 @@
     isStart ? [self.cameraManager ddy_StartRecorder] : [self.cameraManager ddy_StopRecorder];
 }
 
+#pragma mark 点击聚焦
+- (void)handleFocus:(CGPoint)point {
+    [self.cameraManager ddy_FocusAtPoint:point];
+}
+
+#pragma mark - cameraManger 回调
 #pragma mark 拍照成功
 - (void)handleTakeFinish:(UIImage *)image {
     if (image && self.takePhotoBlock) {
@@ -90,6 +100,17 @@
 #pragma mark 录制成功
 - (void)handleRecordFinish:(NSURL *)videoURL {
     
+}
+
+#pragma mark 光强检测
+- (void)handleBrightness:(CGFloat)brightnessValue {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (brightnessValue > 0 && self.cameraView.isShowToneButton) {
+           self.cameraView.isShowToneButton = NO;
+        } else if (brightnessValue < 0 && !self.cameraView.isShowToneButton) {
+            self.cameraView.isShowToneButton = YES;
+        }
+    });
 }
 
 #pragma mark - 状态栏显隐性

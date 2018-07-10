@@ -14,5 +14,10 @@
 @property (nonatomic, copy) void (^takeBlock)(void);
 /** 录制事件 */
 @property (nonatomic, copy) void (^recordBlock)(BOOL isStart);
+/** 点击聚焦 */
+@property (nonatomic, copy) void (^focusBlock)(CGPoint point);
+
+/** 曝光明暗度按钮显隐 */
+@property (nonatomic, assign) BOOL isShowToneButton;
 
 @end

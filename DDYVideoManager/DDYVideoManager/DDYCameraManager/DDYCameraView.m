@@ -21,10 +21,12 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 @property (nonatomic, strong) CAShapeLayer *shapeLayer;
 /** 定时器 */
 @property (nonatomic, strong) NSTimer *recordTimer;
-/** 时长 s */
-@property (nonatomic, assign) CGFloat recordSeconds;
 /** 是否录制 */
 @property (nonatomic, assign) BOOL isRecording;
+/** 聚焦框 */
+@property (nonatomic, strong) UIImageView *focusCursor;
+/** 录制时长 */
+@property (nonatomic, strong) UILabel *durationLabel;
 
 @end
 
@@ -49,6 +51,7 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 - (UIButton *)toneButton {
     if (!_toneButton) {
         _toneButton = [self btnImg:@"toneN" imgS:@"toneS" sel:@selector(handleTone:)];
+        _toneButton.hidden = YES;
     }
     return _toneButton;
 }
@@ -73,6 +76,27 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
         [_takeButton addGestureRecognizer:[[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)]];
     }
     return _takeButton;
+}
+
+- (UIImageView *)focusCursor {
+    if (!_focusCursor) {
+        _focusCursor = [[UIImageView alloc] initWithImage:cameraImg(@"focus")];
+        _focusCursor.alpha = 0;
+        [self addSubview:_focusCursor];
+    }
+    return _focusCursor;
+}
+
+- (UILabel *)durationLabel {
+    if (!_durationLabel) {
+        _durationLabel = [[UILabel alloc] init];
+        _durationLabel.textAlignment = NSTextAlignmentCenter;
+        _durationLabel.font = [UIFont systemFontOfSize:14];
+        _durationLabel.textColor = [UIColor whiteColor];
+        _durationLabel.hidden = YES;
+        [self addSubview:_durationLabel];
+    }
+    return _durationLabel;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -106,7 +130,20 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
             make.bottom.mas_equalTo(self).offset(-20);
             make.width.height.mas_equalTo(60);
         }];
-        self.toneButton.hidden = YES;
+        
+        [self.durationLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.bottom.mas_equalTo(self.takeButton.mas_top).offset(-20);
+            make.left.right.mas_equalTo(self);
+            make.height.mas_equalTo(15);
+        }];
+        
+        [self.focusCursor mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.mas_equalTo(self);
+            make.centerY.mas_equalTo(self);
+            make.width.height.mas_equalTo(60);
+        }];
+        
+        [self addGenstureRecognizer];
     }
     return self;
 }
@@ -114,6 +151,17 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
 - (void)layoutSubviews {
     [super layoutSubviews];
     [self addShapeLayer];
+}
+
+#pragma mark 添加手势
+- (void)addGenstureRecognizer {
+    UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(SingleTap:)];
+    singleTap.numberOfTapsRequired = 1;
+    [self addGestureRecognizer:singleTap];
+    UITapGestureRecognizer *doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(DoubleTap:)];
+    doubleTap.numberOfTapsRequired = 2;
+    [self addGestureRecognizer:doubleTap];
+    [singleTap requireGestureRecognizerToFail:doubleTap];
 }
 
 - (void)addShapeLayer {
@@ -141,28 +189,40 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     [self.takeButton.layer addSublayer:_progressLayer];
 }
 
-- (void)startRecord{
-    self.recordSeconds = 0.;
-    self.progressLayer.strokeEnd = 0./10.;
-    self.recordTimer = [NSTimer ddy_scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
-        self.recordSeconds += 0.1;
-        self.progressLayer.strokeEnd = self.recordSeconds/10.;
-        if (self.recordSeconds >= 10.) [self stopRecord];
-    }];
-    if (self.recordBlock) self.recordBlock(YES);
+- (void)startRecord {
+    self.isRecording = YES;
+    
+    if (self.recordBlock) self.recordBlock(self.isRecording);
+    if (self.lightBlock) self.lightBlock(self.isRecording, self.lightButton.selected);
+    
+    self.durationLabel.hidden = !self.isRecording;
     self.shapeLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
     self.progressLayer.transform = CATransform3DMakeScale(1.35, 1.35, 1);
-    self.isRecording = YES;
-    if (self.lightBlock) self.lightBlock(self.isRecording, self.lightButton.selected);
+    
+    self.progressLayer.strokeEnd = 0./10.;
+    static CGFloat recordSeconds = 0.;
+    self.durationLabel.text = @"0s";
+    self.recordTimer = [NSTimer ddy_scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
+        if (recordSeconds >= 10.0) {
+            [self stopRecord];
+        } else {
+            recordSeconds += 0.1;
+            self.durationLabel.text = [NSString stringWithFormat:@"%.0fs", floorf(recordSeconds)];
+            self.progressLayer.strokeEnd = recordSeconds/10.;
+        }NSLog(@"%f", recordSeconds);
+    }];
 }
 
 - (void)stopRecord {
-    [self.recordTimer invalidate];
-    self.recordTimer = nil;
-    if (self.recordBlock) self.recordBlock(NO);
-    self.shapeLayer.transform = CATransform3DIdentity;
-    self.progressLayer.transform = CATransform3DIdentity;
-    self.isRecording = NO;
+    if (self.isRecording) {
+        [self.recordTimer invalidate];
+        self.recordTimer = nil;
+        self.shapeLayer.transform = CATransform3DIdentity;
+        self.progressLayer.transform = CATransform3DIdentity;
+        self.isRecording = NO;
+        if (self.recordBlock) self.recordBlock(self.isRecording);
+        if (self.lightBlock) self.lightBlock(self.isRecording, self.lightButton.selected);
+    }
 }
 
 #pragma mark - 事件处理
@@ -199,6 +259,38 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     } else if (longP.state == UIGestureRecognizerStateChanged) {
         
     }
+}
+
+#pragma mark 单击聚焦
+- (void)SingleTap:(UITapGestureRecognizer*)recognizer {
+    CGPoint point= [recognizer locationInView:self];
+    if (self.focusBlock) self.focusBlock(point);
+    
+    self.focusCursor.center = point;
+    self.focusCursor.transform = CGAffineTransformMakeScale(1.5, 1.5);
+    self.focusCursor.alpha = 1.;
+
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(identityAnimation) object:nil];
+    [self performSelector:@selector(identityAnimation) withObject:nil afterDelay:0.5];
+}
+
+- (void)identityAnimation {
+    [UIView animateWithDuration:0.5 animations:^{
+        self.focusCursor.transform = CGAffineTransformIdentity;
+        self.focusCursor.alpha = 0.4;
+    } completion:^(BOOL finished) {
+        self.focusCursor.alpha = 0;
+    }];
+}
+
+#pragma mark 双击切换摄像头
+- (void)DoubleTap:(UITapGestureRecognizer*)recognizer {
+    if (self.toggleBlock) self.toggleBlock();
+}
+
+- (void)setIsShowToneButton:(BOOL)isShowToneButton {
+    _isShowToneButton = isShowToneButton;
+    self.toneButton.hidden = !_isShowToneButton;
 }
 
 @end

@@ -311,20 +311,35 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
     }];
 }
 
+#pragma mark 光感系数
+/**
+ AVCaptureDevice *captureDevice = [self.videoInput device];
+ CGFloat currentISO = captureDevice.ISO;
+ NSLog(@"%f_%f", currentISO, captureDevice.activeFormat.maxISO);
+ */
+- (void)ddy_ISO:(BOOL)isMAX {
+    [self changeDeviceProperty:^(AVCaptureDevice *captureDevice) {
+        CGFloat maxISO = captureDevice.activeFormat.maxISO;
+        [captureDevice setExposureModeCustomWithDuration:AVCaptureExposureDurationCurrent ISO:isMAX ? maxISO : 400 completionHandler:nil];
+    }];
+}
+
 #pragma mark 聚焦/曝光
 - (void)ddy_FocusAtPoint:(CGPoint)point {
+    CGPoint cameraPoint = [self.previewLayer captureDevicePointOfInterestForPoint:point];
+    
     [self changeDeviceProperty:^(AVCaptureDevice *captureDevice) {
         if ([captureDevice isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
             [captureDevice setFocusMode:AVCaptureFocusModeAutoFocus];
         }
         if ([captureDevice isFocusPointOfInterestSupported]) {
-            [captureDevice setFocusPointOfInterest:point];
+            [captureDevice setFocusPointOfInterest:cameraPoint];
         }
         if ([captureDevice isExposureModeSupported:AVCaptureExposureModeAutoExpose]) {
             [captureDevice setExposureMode:AVCaptureExposureModeAutoExpose];
         }
         if ([captureDevice isExposurePointOfInterestSupported]) {
-            [captureDevice setExposurePointOfInterest:point];
+            [captureDevice setExposurePointOfInterest:cameraPoint];
         }
     }];
 }
@@ -333,6 +348,7 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 - (void)ddy_TakePhotos {
     AVCaptureConnection *imageConnection = [self.imageOutput connectionWithMediaType:AVMediaTypeVideo];
     if (imageConnection.isVideoOrientationSupported) {
+        // https://blog.csdn.net/mrtianxiang/article/details/78339388
         imageConnection.videoOrientation = AVCaptureVideoOrientationPortrait;
     }
     __weak __typeof__ (self)weakSelf = self;
@@ -370,7 +386,7 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 }
 
 #pragma mark 结束录制视频
-- (void)ddy_StopRecorder {
+- (void)ddy_StopRecorder {NSLog(@"ENNNNNNNNND");
     __weak __typeof__ (self)weakSelf = self;
     [self.assetWriter finishWritingWithCompletionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -378,9 +394,9 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
             if (strongSelf.recordFinishBlock) {
                 strongSelf.recordFinishBlock(strongSelf.videoURL);
             }
-            strongSelf.isRecording = NO;
         });
     }];
+    self.isRecording = NO;
 }
 
 #pragma mark - Private methods
@@ -410,6 +426,7 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
+    // 录制
     if (self.isRecording) {
         if (!_assetWriter) {
             [self.assetWriter startWriting];
@@ -419,12 +436,20 @@ typedef void(^PropertyChangeBlock)(AVCaptureDevice *captureDevice);
         if (CMSampleBufferDataIsReady(sampleBuffer) && self.assetWriter.status == AVAssetWriterStatusWriting) {
             CFRetain(sampleBuffer);
             if (captureOutput == self.videoOutput && self.assetVideoInput.readyForMoreMediaData) {
-                [self.assetVideoInput appendSampleBuffer:sampleBuffer];NSLog(@"video_000");
+                [self.assetVideoInput appendSampleBuffer:sampleBuffer];//NSLog(@"video_000");
             } else if (captureOutput == self.audioOutput && self.assetAudioInput.readyForMoreMediaData) {
-                [self.assetAudioInput appendSampleBuffer:sampleBuffer];NSLog(@"audio_000");
+                [self.assetAudioInput appendSampleBuffer:sampleBuffer];//NSLog(@"audio_000");
             }
             CFRelease(sampleBuffer);
         }
+    }
+    // 光强检测
+    CFDictionaryRef metadataDict = CMCopyDictionaryOfAttachments(NULL, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
+    NSDictionary *metadata = [[NSMutableDictionary alloc] initWithDictionary:(__bridge NSDictionary*)metadataDict];
+    NSDictionary *exifMetadata = [[metadata objectForKey:(NSString *)kCGImagePropertyExifDictionary] mutableCopy];
+    float brightnessValue = [[exifMetadata objectForKey:(NSString *)kCGImagePropertyExifBrightnessValue] floatValue];
+    if (self.brightnessValueBlock) {
+        self.brightnessValueBlock(brightnessValue);
     }
 }
 
