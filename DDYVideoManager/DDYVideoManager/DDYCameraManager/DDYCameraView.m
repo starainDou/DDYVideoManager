@@ -292,11 +292,13 @@ static inline UIImage *cameraImg(NSString *imageName) {return [UIImage imageName
     if (self.toggleBlock) self.toggleBlock();
 }
 
+#pragma mark 是否显示调整曝光度的按钮
 - (void)setIsShowToneButton:(BOOL)isShowToneButton {
     _isShowToneButton = isShowToneButton;
     self.toneButton.hidden = !_isShowToneButton;
 }
 
+#pragma mark 录制完重置view
 - (void)ddy_ResetRecordView {
     self.isRecording = NO;
     self.shapeLayer.transform = CATransform3DIdentity;

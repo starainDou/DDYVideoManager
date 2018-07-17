@@ -20,6 +20,7 @@
 /** 曝光明暗度按钮显隐 */
 @property (nonatomic, assign) BOOL isShowToneButton;
 
+/** 录制完重置view */
 - (void)ddy_ResetRecordView;
 
 @end
