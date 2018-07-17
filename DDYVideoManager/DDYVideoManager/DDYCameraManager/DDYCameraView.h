@@ -20,4 +20,6 @@
 /** 曝光明暗度按钮显隐 */
 @property (nonatomic, assign) BOOL isShowToneButton;
 
+- (void)ddy_ResetRecordView;
+
 @end
