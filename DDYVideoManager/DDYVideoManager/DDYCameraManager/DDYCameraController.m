@@ -99,7 +99,7 @@
 
 #pragma mark 录制成功
 - (void)handleRecordFinish:(NSURL *)videoURL {
-    
+    [self.cameraManager ddy_ResetRecorder];
 }
 
 #pragma mark 光强检测

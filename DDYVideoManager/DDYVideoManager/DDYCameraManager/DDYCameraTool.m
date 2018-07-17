@@ -56,4 +56,29 @@
     return thumbnailImage;
 }
 
+#pragma mark 添加背景音乐
++ (void)ddy_AddMusicInVideo:(NSURL *)videoPath music:(NSURL *)musicPath keepOrignalSound:(BOOL)isKeep complete:(void (^)(NSURL *))complete {
+    
+}
+
+-(void)videoCompression{
+    
+    NSLog(@"begin");
+    NSURL *tempurl = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"temp.mov"]];
+    //加载视频资源
+    AVAsset *asset = [AVAsset assetWithURL:tempurl];
+    //创建视频资源导出会话
+    AVAssetExportSession *session = [[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetMediumQuality];
+    //创建导出视频的URL
+    session.outputURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"tempLow.mov"]];
+    //必须配置输出属性
+    session.outputFileType = @"com.apple.quicktime-movie";
+    //导出视频
+    [session exportAsynchronouslyWithCompletionHandler:^{
+        NSLog(@"end");
+    }];
+    
+}
+
+
 @end
